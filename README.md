@@ -1,45 +1,42 @@
 SIGAAPP
 =======
 
-Resumen
--------
-Proyecto Android (Kotlin, Gradle) — importado al repositorio remoto https://github.com/HecAguilaV/DevAppMobile.git.
+Descripción
+-----------
+SIGAAPP es una aplicación Android escrita en Kotlin y construida con Gradle. Contiene la lógica y recursos necesarios para compilar una APK de ejemplo y sirve como punto de partida para desarrollar funcionalidades de la aplicación móvil.
 
-Flujo de trabajo (simple, solo `main`)
-------------------------------------
-1. Trabaja localmente en tu rama `main` (pruebas/iteraciones).
-2. Cuando estés listo para subir todo al remoto, ejecuta:
+Características
+---------------
+- Basada en Kotlin y Jetpack (Android)
+- Estructura estándar de Gradle para Android
+- Ejemplos de pantallas y recursos en `app/src/main`
 
-   git add -A
-   git commit -m "<mensaje descriptivo>"
-   git push hecdev main
+Requisitos
+----------
+- JDK 11 o superior
+- Android SDK (herramientas de plataforma y build-tools correspondientes)
+- Android Studio recomendado para desarrollo y depuración
 
-Esto empujará tus cambios directamente a `main` en el remoto `hecdev`.
-
-Estado actual
--------------
-- Remote: hecdev -> https://github.com/HecAguilaV/DevAppMobile.git
-- Rama principal local: `main` (configurada para trackear `hecdev/main`)
-- Se creó también una rama de importación remota con el contenido original: `import/sigaapp-<timestamp>` (histórico)
-
-Cómo compilar y ejecutar (rápido)
---------------------------------
-Requisitos: JDK 11+, Android SDK y Android Studio o las herramientas de línea de comandos de Gradle.
-
-Desde PowerShell (Windows):
+Instalación y compilación
+-------------------------
+Desde la línea de comandos (Windows PowerShell o similar):
 
     cd C:\Users\hdagu\Documents\SIGAAPP
-    ./gradlew assembleDebug
+    ./gradlew clean assembleDebug
 
-Para ejecutar en un dispositivo/emulador desde Android Studio, abre el proyecto y usa Run.
+En sistemas Unix/macOS usar `./gradlew` (siempre con permisos de ejecución). Para abrir y ejecutar en un emulador o dispositivo físico, abra el proyecto en Android Studio y use las herramientas de ejecución (Run).
 
-Siguientes pasos (opcional)
----------------------------
-- Añadir GitHub Actions para CI (build en cada push).
-- Crear un `CHANGELOG.md` o etiquetas semánticas para releases.
+Ejecución
+---------
+- Para instalar la APK generada en un dispositivo conectado:
 
-Contacto
---------
-Repositorio propiedad de: HecAguilaV
-Correo local configurado para commits: he.aguila@duocuc.cl
+    ./gradlew installDebug
+
+- Para ejecutar pruebas unitarias:
+
+    ./gradlew testDebugUnitTest
+
+- Para ejecutar pruebas instrumentadas (requiere emulador o dispositivo):
+
+    ./gradlew connectedAndroidTest
 

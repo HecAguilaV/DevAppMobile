@@ -18,7 +18,6 @@
 # Android Studio
 /.gradle
 /.idea/
-*.iml
 *.hprof
 
 # Generated files
@@ -38,4 +37,3 @@ node_modules/
 
 # Keep gradle wrapper
 !gradle/wrapper/gradle-wrapper.jar
-
