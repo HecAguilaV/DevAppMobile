@@ -95,6 +95,42 @@ class ApiService {
         }
     }
 
+    suspend fun getStock(token: String): Result<com.example.sigaapp.data.model.StockListResponse> {
+        return try {
+            val response = client.get("/api/saas/stock") {
+                header("Authorization", "Bearer $token")
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getVentas(token: String): Result<com.example.sigaapp.data.model.VentasListResponse> {
+        return try {
+            val response = client.get("/api/saas/ventas") {
+                header("Authorization", "Bearer $token")
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun parseErrorMessage(jsonString: String): String {
         return try {
             val json = JSONObject(jsonString)

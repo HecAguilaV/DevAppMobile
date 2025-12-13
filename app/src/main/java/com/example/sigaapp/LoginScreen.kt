@@ -12,6 +12,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -23,87 +28,9 @@ fun LoginScreen(
     viewModel: com.example.sigaapp.ui.viewmodel.AuthViewModel
 ) {
     var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val loginSuccess by viewModel.loginSuccess.collectAsState()
-    val userRole by viewModel.userRole.collectAsState()
-    
-    // Navegar al éxito
-    LaunchedEffect(loginSuccess, userRole) {
-        if (loginSuccess && userRole != null) {
-            navController.navigate("dashboard/${userRole}") {
-                popUpTo("login") { inclusive = true }
-            }
-        }
-    }
+    var passwordVisible by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Background)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp)
-        ) {
-            // Logo y título
-            Image(
-                painter = painterResource(id = R.drawable.logosiga),
-                contentDescription = "SIGA Logo",
-                modifier = Modifier.size(140.dp)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "SIGA",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = PrimaryDark
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Sistema Inteligente de Gestión de Activos",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Card con formulario
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(8.dp, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceLight)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { 
-                            username = it
-                            viewModel.clearError() 
-                        },
-                        label = { Text("Email") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AccentCyan,
-                            unfocusedBorderColor = DisabledGray,
-                            focusedLabelColor = AccentCyan
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !isLoading
-                    )
+    // ... (rest of code)
 
                     OutlinedTextField(
                         value = password,
@@ -112,7 +39,7 @@ fun LoginScreen(
                             viewModel.clearError() 
                         },
                         label = { Text("Contraseña") },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -121,7 +48,19 @@ fun LoginScreen(
                             focusedLabelColor = AccentCyan
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        enabled = !isLoading
+                        enabled = !isLoading,
+                        trailingIcon = {
+                            val image = if (passwordVisible)
+                                Icons.Default.Visibility
+                            else
+                                Icons.Default.VisibilityOff
+
+                            val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, contentDescription = description)
+                            }
+                        }
                     )
 
                     if (error != null) {
@@ -167,6 +106,68 @@ fun LoginScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             )
+                        }
+                    }
+                    
+                    // Biometric Button
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val sessionManager = remember { com.example.sigaapp.data.local.SessionManager(context) }
+                    var showBiometricButton by remember { mutableStateOf(false) }
+                    
+        // Navegar al éxito
+    LaunchedEffect(loginSuccess, userRole) {
+        if (loginSuccess && userRole != null) {
+            // Guardar credenciales para biometria
+            if (username.isNotBlank() && password.isNotBlank()) {
+                 sessionManager.saveCredentials(username, password)
+            }
+            
+            navController.navigate("dashboard/${userRole}") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+                    LaunchedEffect(Unit) {
+                         val credentials = sessionManager.getSavedCredentials()
+                         if (credentials != null) {
+                             showBiometricButton = true
+                         }
+                    }
+
+                    if (showBiometricButton && !isLoading) {
+                         OutlinedButton(
+                            onClick = {
+                                val fragmentActivity = context as? androidx.fragment.app.FragmentActivity
+                                if (fragmentActivity != null) {
+                                    val executor = androidx.core.content.ContextCompat.getMainExecutor(context)
+                                    val biometricPrompt = androidx.biometric.BiometricPrompt(fragmentActivity, executor,
+                                        object : androidx.biometric.BiometricPrompt.AuthenticationCallback() {
+                                            override fun onAuthenticationSucceeded(result: androidx.biometric.BiometricPrompt.AuthenticationResult) {
+                                                super.onAuthenticationSucceeded(result)
+                                                val credentials = sessionManager.getSavedCredentials()
+                                                if (credentials != null) {
+                                                    viewModel.login(credentials.first, credentials.second)
+                                                }
+                                            }
+                                        })
+            
+                                    val promptInfo = androidx.biometric.BiometricPrompt.PromptInfo.Builder()
+                                        .setTitle("Ingreso Biométrico")
+                                        .setSubtitle("Usa tu huella o rostro para ingresar")
+                                        .setNegativeButtonText("Cancelar")
+                                        .build()
+            
+                                    biometricPrompt.authenticate(promptInfo)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                             colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = PrimaryDark
+                            )
+                        ) {
+                            Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                            Text("Ingresar con Biometría")
                         }
                     }
                 }

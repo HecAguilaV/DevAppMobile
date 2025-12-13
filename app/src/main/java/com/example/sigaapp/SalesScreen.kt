@@ -29,23 +29,24 @@ data class Sale(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SalesScreen(navController: NavController) {
+fun SalesScreen(
+    navController: NavController,
+    viewModel: com.example.sigaapp.ui.viewmodel.SalesViewModel
+) {
     val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("es", "CL")) }
     
-    // Datos hardcodeados de ejemplo
-    val sales = remember {
-        listOf(
-            Sale("1", "Hoy", 125000.0, 8, "ITR"),
-            Sale("2", "Ayer", 98000.0, 6, "ITR"),
-            Sale("3", "15 Ene", 156000.0, 10, "ITR"),
-            Sale("4", "14 Ene", 87000.0, 5, "ITR"),
-            Sale("5", "13 Ene", 142000.0, 9, "ITR")
-        )
-    }
+    val sales by viewModel.sales.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    val totalToday = sales.firstOrNull()?.amount ?: 0.0
-    val totalWeek = sales.sumOf { it.amount }
-    val avgSale = sales.map { it.amount }.average()
+    val totalToday = sales.firstOrNull()?.total?.toDouble() ?: 0.0 // Aprox, si la API no filtra por hoy
+    // Nota: El backend debería filtrar por fecha para ser exacto, o lo hacemos aquí parseando fecha strings.
+    // Asumiremos que el backend devuelve las ventas ordenadas por fecha reciente.
+    // Calcular totales reales requiere parsear fechas. Por ahora solo sumamos todo.
+    val totalSales = sales.sumOf { it.total }
+
+    // Calcular promedio
+    val avgSale = if (sales.isNotEmpty()) sales.map { it.total }.average() else 0.0
 
     Scaffold(
         topBar = {
@@ -64,6 +65,11 @@ fun SalesScreen(navController: NavController) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = White)
                     }
                 },
+                actions = {
+                    IconButton(onClick = { viewModel.loadSales() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Recargar", tint = White)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = AccentTurquoise
                 )
@@ -71,183 +77,204 @@ fun SalesScreen(navController: NavController) {
         },
         containerColor = Background
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Resumen de ventas
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = AccentTurquoise
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = currencyFormat.format(totalToday),
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = White
-                            )
-                            Text(
-                                text = "Hoy",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = White.copy(alpha = 0.9f)
-                            )
-                        }
-                    }
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = AccentCyan
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = currencyFormat.format(totalWeek),
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = White
-                            )
-                            Text(
-                                text = "Esta Semana",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = White.copy(alpha = 0.9f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = EmeraldOps
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Resumen de ventas
+                item {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column {
-                            Text(
-                                text = "Promedio por Venta",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = White.copy(alpha = 0.9f)
-                            )
-                            Text(
-                                text = currencyFormat.format(avgSale),
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = White
-                            )
-                        }
-                        Icon(
-                            Icons.Default.TrendingUp,
-                            contentDescription = null,
-                            tint = White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                }
-            }
-
-            // Lista de ventas recientes
-            item {
-                Text(
-                    text = "Ventas Recientes",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = TextPrimary,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
-            items(sales) { sale ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = SurfaceLight
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = AccentTurquoise
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(
-                                        color = AccentTurquoise,
-                                        shape = RoundedCornerShape(8.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(
-                                    Icons.Default.PointOfSale,
-                                    contentDescription = null,
-                                    tint = White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                            Column {
                                 Text(
-                                    text = sale.date,
-                                    style = MaterialTheme.typography.titleMedium.copy(
+                                    text = currencyFormat.format(totalSales), // Mostramos Total General en vez de "Hoy" si no filtramos
+                                    style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.Bold
                                     ),
-                                    color = TextPrimary
+                                    color = White
                                 )
                                 Text(
-                                    text = "${sale.items} items • ${sale.location}",
+                                    text = "Total Ventas",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary
+                                    color = White.copy(alpha = 0.9f)
                                 )
                             }
                         }
-                        Text(
-                            text = currencyFormat.format(sale.amount),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = AccentCyan
                             ),
-                            color = AccentTurquoise
-                        )
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${sales.size}",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = White
+                                )
+                                Text(
+                                    text = "Nº Transacciones",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = White.copy(alpha = 0.9f)
+                                )
+                            }
+                        }
                     }
                 }
+    
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = EmeraldOps
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Promedio por Venta",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = White.copy(alpha = 0.9f)
+                                )
+                                Text(
+                                    text = currencyFormat.format(avgSale),
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = White
+                                )
+                            }
+                            Icon(
+                                Icons.Default.TrendingUp,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                }
+    
+                // Lista de ventas recientes
+                item {
+                    Text(
+                        text = "Ventas Recientes",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = TextPrimary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+    
+                items(sales) { sale ->
+                    val saleLocation = sale.local_nombre ?: "Local ${sale.local_id}"
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = SurfaceLight
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(
+                                            color = AccentTurquoise,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.PointOfSale,
+                                        contentDescription = null,
+                                        tint = White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = sale.fecha.take(10), // Simplificar fecha
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = TextPrimary
+                                    )
+                                    Text(
+                                        text = "${sale.items} items • $saleLocation",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+                            Text(
+                                text = currencyFormat.format(sale.total),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = AccentTurquoise
+                            )
+                        }
+                    }
+                }
+            }
+            
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = AccentCyan
+                )
+            }
+            
+             if (error != null) {
+                Text(
+                    text = error!!,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
+                )
             }
         }
     }

@@ -24,6 +24,8 @@ enum class TileSize {
     LARGE    // 2x2 (cuadrado grande)
 }
 
+import com.example.sigaapp.ui.viewmodel.CardSize
+
 @Composable
 fun DashboardTile(
     title: String,
@@ -31,12 +33,20 @@ fun DashboardTile(
     color: Color,
     enabled: Boolean,
     onClick: () -> Unit,
-    size: TileSize = TileSize.SMALL
+    size: TileSize = TileSize.SMALL,
+    cardSizePreference: CardSize = CardSize.MEDIUM
 ) {
+    // Base height determined by user preference
+    val baseHeight = when (cardSizePreference) {
+        CardSize.SMALL -> 100.dp
+        CardSize.MEDIUM -> 120.dp
+        CardSize.LARGE -> 150.dp
+    }
+
     val height = when (size) {
-        TileSize.SMALL -> 120.dp
-        TileSize.MEDIUM -> 120.dp
-        TileSize.LARGE -> 240.dp
+        TileSize.SMALL -> baseHeight
+        TileSize.MEDIUM -> baseHeight
+        TileSize.LARGE -> baseHeight * 2
     }
     
     val iconSize = when (size) {

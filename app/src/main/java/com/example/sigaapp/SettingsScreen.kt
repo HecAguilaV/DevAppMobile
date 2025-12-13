@@ -1,6 +1,9 @@
 package com.example.sigaapp
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,17 +13,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.sigaapp.ui.theme.*
+import com.example.sigaapp.ui.viewmodel.CardSize
+import com.example.sigaapp.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    onTileSizeChange: (String, TileSize) -> Unit = { _, _ -> }
+    viewModel: SettingsViewModel
 ) {
+    val cardSize by viewModel.cardSize.collectAsState()
+    val context = LocalContext.current
+    var showAboutDialog by remember { mutableStateOf(false) }
+    var showNotificationsDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -83,84 +95,36 @@ fun SettingsScreen(
                             color = TextPrimary
                         )
                         Text(
-                            text = "Personaliza el tamaño de las cards en el dashboard. Próximamente podrás arrastrar y reorganizar.",
+                            text = "Personaliza el tamaño de las cards en el dashboard.",
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary
                         )
-                        // Placeholder para futura funcionalidad de personalización
+                        
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(80.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = AccentCyan.copy(alpha = 0.2f)
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(8.dp),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "Pequeña",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextPrimary
-                                    )
-                                }
-                            }
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(80.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = AccentTurquoise.copy(alpha = 0.2f)
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(8.dp),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "Mediana",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextPrimary
-                                    )
-                                }
-                            }
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(80.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = EmeraldOps.copy(alpha = 0.2f)
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(8.dp),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "Grande",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextPrimary
-                                    )
-                                }
-                            }
+                            CardSizeOption(
+                                label = "Pequeña",
+                                selected = cardSize == CardSize.SMALL,
+                                color = AccentCyan,
+                                onClick = { viewModel.setCardSize(CardSize.SMALL) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            CardSizeOption(
+                                label = "Mediana",
+                                selected = cardSize == CardSize.MEDIUM,
+                                color = AccentTurquoise,
+                                onClick = { viewModel.setCardSize(CardSize.MEDIUM) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            CardSizeOption(
+                                label = "Grande",
+                                selected = cardSize == CardSize.LARGE,
+                                color = EmeraldOps,
+                                onClick = { viewModel.setCardSize(CardSize.LARGE) },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
@@ -182,16 +146,67 @@ fun SettingsScreen(
                     icon = Icons.Default.Notifications,
                     title = "Notificaciones",
                     subtitle = "Gestiona las notificaciones de la app",
-                    onClick = { /* TODO */ }
+                    onClick = { showNotificationsDialog = true }
                 )
             }
+// ...
+        if (showNotificationsDialog) {
+            var pushEnabled by remember { mutableStateOf(viewModel.getNotificationSettings().first) }
+            var stockEnabled by remember { mutableStateOf(viewModel.getNotificationSettings().second) }
+
+            AlertDialog(
+                onDismissRequest = { showNotificationsDialog = false },
+                title = { Text("Configurar Notificaciones") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                             modifier = Modifier.fillMaxWidth(),
+                             horizontalArrangement = Arrangement.SpaceBetween,
+                             verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Notificaciones Push")
+                            Switch(
+                                checked = pushEnabled,
+                                onCheckedChange = { pushEnabled = it }
+                            )
+                        }
+                        Row(
+                             modifier = Modifier.fillMaxWidth(),
+                             horizontalArrangement = Arrangement.SpaceBetween,
+                             verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Alertas de Stock Bajo")
+                            Switch(
+                                checked = stockEnabled,
+                                onCheckedChange = { stockEnabled = it }
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.saveNotificationSettings(pushEnabled, stockEnabled)
+                            showNotificationsDialog = false
+                        }
+                    ) {
+                        Text("Guardar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showNotificationsDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
 
             item {
                 SettingsItem(
                     icon = Icons.Default.Security,
                     title = "Seguridad",
-                    subtitle = "Cambiar contraseña y configuración de seguridad",
-                    onClick = { /* TODO */ }
+                    subtitle = "Cambiar contraseña y configuración biometrica",
+                    onClick = { /* TODO implemented via library logic mainly */ }
                 )
             }
 
@@ -200,7 +215,90 @@ fun SettingsScreen(
                     icon = Icons.Default.Info,
                     title = "Acerca de",
                     subtitle = "Versión 1.0.0 - SIGA Mobile",
-                    onClick = { /* TODO */ }
+                    onClick = { showAboutDialog = true }
+                )
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Support,
+                    title = "Soporte",
+                    subtitle = "hdaguila@gmail.com",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:hdaguila@gmail.com")
+                            putExtra(Intent.EXTRA_SUBJECT, "Soporte SIGA Mobile")
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+            }
+        }
+        
+        if (showAboutDialog) {
+            AlertDialog(
+                onDismissRequest = { showAboutDialog = false },
+                title = { Text("Acerca de SIGA") },
+                text = {
+                    Column {
+                        Text("SIGA es un proyecto nacido de la experiencia frustrada de un operario cumpliendo el rol multiorquesta.")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Desarrollado por Héctor Águila.")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Un Soñador con Poca RAM 👨🏻‍💻",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAboutDialog = false }) {
+                        Text("Cerrar")
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun CardSizeOption(
+    label: String,
+    selected: Boolean,
+    color: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .height(80.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) color else color.copy(alpha = 0.2f)
+        ),
+        shape = RoundedCornerShape(8.dp),
+        border = if (selected) androidx.compose.foundation.BorderStroke(2.dp, White) else null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                ),
+                color = if (selected) White else TextPrimary
+            )
+            if (selected) {
+                 Icon(
+                    Icons.Default.Check,
+                    contentDescription = null,
+                    tint = White,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

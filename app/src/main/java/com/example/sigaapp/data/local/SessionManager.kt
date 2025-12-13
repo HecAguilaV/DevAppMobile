@@ -44,4 +44,60 @@ class SessionManager(context: Context) {
     fun isLoggedIn(): Boolean {
         return getAccessToken() != null
     }
+    
+    // Configuración
+    private const val KEY_CARD_SIZE = "card_size"
+
+    fun saveCardSize(size: String) {
+        prefs.edit().putString(KEY_CARD_SIZE, size).apply()
+    }
+
+    fun getCardSize(): String {
+        return prefs.getString(KEY_CARD_SIZE, "MEDIUM") ?: "MEDIUM"
+    }
+
+    // Biometría (MVP: Guardar credenciales para login rápido)
+    private const val KEY_SAVED_EMAIL = "saved_email"
+    private const val KEY_SAVED_PASS = "saved_pass"
+
+    fun saveCredentials(email: String, pass: String) {
+        prefs.edit()
+            .putString(KEY_SAVED_EMAIL, email)
+            .putString(KEY_SAVED_PASS, pass)
+            .apply()
+    }
+
+    fun getSavedCredentials(): Pair<String, String>? {
+        val email = prefs.getString(KEY_SAVED_EMAIL, null)
+        val pass = prefs.getString(KEY_SAVED_PASS, null)
+        if (email != null && pass != null) {
+            return Pair(email, pass)
+        }
+        return null
+    }
+
+    fun clearCredentials() {
+        prefs.edit()
+            .remove(KEY_SAVED_EMAIL)
+            .remove(KEY_SAVED_PASS)
+            .apply()
+    }
+
+    // Notificaciones
+    private const val KEY_NOTIF_PUSH = "notif_push"
+    private const val KEY_NOTIF_STOCK = "notif_stock"
+
+    fun getNotificationSettings(): Pair<Boolean, Boolean> {
+        return Pair(
+            prefs.getBoolean(KEY_NOTIF_PUSH, true),
+            prefs.getBoolean(KEY_NOTIF_STOCK, true)
+        )
+    }
+
+    fun saveNotificationSettings(push: Boolean, stock: Boolean) {
+        prefs.edit()
+            .putBoolean(KEY_NOTIF_PUSH, push)
+            .putBoolean(KEY_NOTIF_STOCK, stock)
+            .apply()
+    }
 }

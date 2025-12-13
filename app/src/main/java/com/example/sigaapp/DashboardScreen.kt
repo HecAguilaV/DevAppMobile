@@ -41,13 +41,17 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+import com.example.sigaapp.ui.viewmodel.CardSize
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     navController: NavController, 
     userRole: UserRole,
     permissions: List<String> = emptyList(),
-    chatRepository: com.example.sigaapp.data.repository.ChatRepository
+    chatRepository: com.example.sigaapp.data.repository.ChatRepository,
+    onLogout: () -> Unit,
+    cardSize: CardSize = CardSize.MEDIUM
 ) {
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -234,6 +238,7 @@ fun DashboardScreen(
                     color = AccentCyan,
                     enabled = permissions.contains("PRODUCTOS_VER") || userRole == UserRole.ADMINISTRADOR,
                     size = TileSize.LARGE,
+                    cardSizePreference = cardSize,
                     onClick = {
                         navController.navigate("inventory")
                     }
@@ -247,6 +252,7 @@ fun DashboardScreen(
                     color = AccentTurquoise,
                     enabled = permissions.contains("VENTAS_VER") || permissions.contains("VENTAS_CREAR") || userRole == UserRole.ADMINISTRADOR,
                     size = TileSize.MEDIUM,
+                    cardSizePreference = cardSize,
                     onClick = { 
                         navController.navigate("sales")
                     }
@@ -260,6 +266,7 @@ fun DashboardScreen(
                     color = AccentCyan,
                     enabled = userRole == UserRole.ADMINISTRADOR, // Por ahora solo admin
                     size = TileSize.SMALL,
+                    cardSizePreference = cardSize,
                     onClick = { 
                         showBottomSheet = true
                         userInput = "¿Qué documentos puedo gestionar en SIGA?"
@@ -274,6 +281,7 @@ fun DashboardScreen(
                     color = AlertRed,
                     enabled = permissions.contains("COSTOS_VER") || userRole == UserRole.ADMINISTRADOR,
                     size = TileSize.SMALL,
+                    cardSizePreference = cardSize,
                     onClick = { 
                         showBottomSheet = true
                         userInput = "Muéstrame información sobre gastos"
@@ -289,6 +297,7 @@ fun DashboardScreen(
                     color = EmeraldOps,
                     enabled = permissions.contains("ASISTENTE_USAR") || userRole == UserRole.ADMINISTRADOR,
                     size = TileSize.MEDIUM,
+                    cardSizePreference = cardSize,
                     onClick = {
                         showBottomSheet = true
                     }
@@ -301,6 +310,7 @@ fun DashboardScreen(
                     color = PrimaryDark,
                     enabled = userRole == UserRole.ADMINISTRADOR,
                     size = TileSize.SMALL,
+                    cardSizePreference = cardSize,
                     onClick = {
                         navController.navigate("settings")
                     }
@@ -311,7 +321,8 @@ fun DashboardScreen(
                     title = "Soporte",
                     icon = Icons.Default.Support,
                     color = AccentCyan,
-                    enabled = true,
+                    size = TileSize.SMALL, // Default text style uses SMALL if not provided, but DashboardTile size defaults to SMALL too
+                    cardSizePreference = cardSize,
                     onClick = {
                         showBottomSheet = true
                         userInput = "Necesito ayuda con SIGA"
@@ -324,11 +335,10 @@ fun DashboardScreen(
                     title = "Salir",
                     icon = Icons.Default.ExitToApp,
                     color = AlertRed,
-                    enabled = true,
+                    size = TileSize.SMALL,
+                    cardSizePreference = cardSize,
                     onClick = {
-                        navController.navigate("login") { 
-                            popUpTo("login") { inclusive = true } 
-                        }
+                        onLogout()
                     }
                 )
             }

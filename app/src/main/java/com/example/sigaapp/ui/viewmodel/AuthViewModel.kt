@@ -49,6 +49,12 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun clearError() {
         _error.value = null
     }
+
+    fun logout() {
+        _loginSuccess.value = false
+        _userRole.value = null
+        _error.value = null
+    }
 }
 
 class AuthViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
