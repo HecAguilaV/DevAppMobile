@@ -12,8 +12,8 @@ data class LoginRequest(
 @Serializable
 data class LoginResponse(
     val success: Boolean,
-    @SerialName("access_token") val accessToken: String? = null,
-    @SerialName("refresh_token") val refreshToken: String? = null,
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
     val user: User? = null,
     val message: String? = null
 )
