@@ -23,6 +23,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import com.example.sigaapp.data.model.ProductRequest
 import com.example.sigaapp.data.model.ProductResponse
+import com.example.sigaapp.data.model.LocalesResponse
 import org.json.JSONObject
 
 class ApiService {
@@ -147,6 +148,24 @@ class ApiService {
             val response = client.post("/api/saas/productos") {
                 header("Authorization", "Bearer $token")
                 setBody(product)
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getLocales(token: String): Result<LocalesResponse> {
+        return try {
+            val response = client.get("/api/saas/locales") {
+                header("Authorization", "Bearer $token")
             }
 
             if (response.status.isSuccess()) {

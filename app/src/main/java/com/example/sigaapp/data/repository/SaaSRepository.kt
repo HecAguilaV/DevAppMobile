@@ -24,4 +24,9 @@ class SaaSRepository(
         val request = com.example.sigaapp.data.model.ProductRequest(nombre, precio, descripcion)
         return apiService.createProduct(request, token).map { it.producto }
     }
+
+    suspend fun getLocales(): Result<List<com.example.sigaapp.data.model.Local>> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        return apiService.getLocales(token).map { it.locales }
+    }
 }

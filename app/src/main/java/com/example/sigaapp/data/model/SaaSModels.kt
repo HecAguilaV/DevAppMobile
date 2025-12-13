@@ -61,3 +61,16 @@ data class ProductResponse(
     val success: Boolean,
     val producto: Product
 )
+
+@Serializable
+data class Local(
+    val id: Int,
+    val nombre: String,
+    val direccion: String? = null
+)
+
+@Serializable
+data class LocalesResponse(
+    val success: Boolean,
+    val locales: List<Local> = emptyList()
+)

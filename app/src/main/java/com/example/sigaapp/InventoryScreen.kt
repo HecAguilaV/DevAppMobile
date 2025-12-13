@@ -52,6 +52,11 @@ fun InventoryScreen(
     var newProductPrice by remember { mutableStateOf("") }
     var newProductDesc by remember { mutableStateOf("") }
 
+    // Multi-Local State
+    val locales by viewModel.locales.collectAsState()
+    val selectedLocal by viewModel.selectedLocal.collectAsState()
+    var expandedLocalMenu by remember { mutableStateOf(false) }
+
     val lowStockProducts = stockItems.filter { it.cantidad <= it.min_stock }
 
     if (showAddDialog) {
@@ -155,6 +160,53 @@ fun InventoryScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Selector de Local
+                
+                if (locales.isNotEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+                            ExposedDropdownMenuBox(
+                                expanded = expandedLocalMenu,
+                                onExpandedChange = { expandedLocalMenu = !expandedLocalMenu }
+                            ) {
+                                OutlinedTextField(
+                                    value = selectedLocal?.nombre ?: "Todos los Locales",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Filtrar por Local") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLocalMenu) },
+                                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = SurfaceLight,
+                                        unfocusedContainerColor = SurfaceLight
+                                    )
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedLocalMenu,
+                                    onDismissRequest = { expandedLocalMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Todos los Locales") },
+                                        onClick = {
+                                            viewModel.selectLocal(null)
+                                            expandedLocalMenu = false
+                                        }
+                                    )
+                                    locales.forEach { local ->
+                                        DropdownMenuItem(
+                                            text = { Text(local.nombre) },
+                                            onClick = {
+                                                viewModel.selectLocal(local)
+                                                expandedLocalMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ... (Alertas y Resumen igual) ...
                 // Alertas de stock bajo
                 if (lowStockProducts.isNotEmpty()) {
