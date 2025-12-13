@@ -42,7 +42,8 @@ android {
         debug {
             // Default for debug if not in local.properties
             if (localApiUrl == null) {
-                buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080\"")
+                // Cambiar default debug a producción por solicitud del usuario
+                buildConfigField("String", "API_BASE_URL", "\"https://siga-backend-production.up.railway.app\"")
             }
         }
         release {
