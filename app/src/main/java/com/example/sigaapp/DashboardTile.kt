@@ -1,5 +1,6 @@
 package com.example.sigaapp
 
+import com.example.sigaapp.ui.viewmodel.CardSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +25,7 @@ enum class TileSize {
     LARGE    // 2x2 (cuadrado grande)
 }
 
-import com.example.sigaapp.ui.viewmodel.CardSize
+// Import moved to top
 
 @Composable
 fun DashboardTile(

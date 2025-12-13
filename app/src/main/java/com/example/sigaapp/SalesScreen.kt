@@ -18,14 +18,7 @@ import com.example.sigaapp.ui.theme.*
 import java.text.NumberFormat
 import java.util.*
 
-// Datos de ejemplo para ventas
-data class Sale(
-    val id: String,
-    val date: String,
-    val amount: Double,
-    val items: Int,
-    val location: String
-)
+// Sale data class removed (using Sale from models)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
