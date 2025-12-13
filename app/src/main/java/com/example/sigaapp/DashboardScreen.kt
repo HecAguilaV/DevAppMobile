@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import android.content.Intent
 import android.speech.RecognizerIntent
-import com.example.sigaapp.service.GeminiService
 import com.example.sigaapp.service.VoiceService
 import com.example.sigaapp.ui.theme.*
 import kotlinx.coroutines.launch
@@ -47,7 +46,8 @@ data class ChatMessage(
 fun DashboardScreen(
     navController: NavController, 
     userRole: UserRole,
-    permissions: List<String> = emptyList()
+    permissions: List<String> = emptyList(),
+    chatRepository: com.example.sigaapp.data.repository.ChatRepository
 ) {
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -130,31 +130,7 @@ fun DashboardScreen(
         isLoading = true
 
         scope.launch {
-            // Obtener historial de conversación (últimos 10 pares usuario-asistente)
-            // Construir historial correctamente: pares (usuario, asistente)
-            val history = mutableListOf<Pair<String, String>>()
-            var currentUserMsg = ""
-            
-            // Procesar mensajes anteriores (excluyendo el que acabamos de agregar)
-            chatMessages.dropLast(1).forEach { msg ->
-                if (msg.isUser) {
-                    currentUserMsg = msg.text
-                } else {
-                    // Si hay un mensaje de usuario previo, crear el par
-                    if (currentUserMsg.isNotEmpty()) {
-                        history.add(currentUserMsg to msg.text)
-                        currentUserMsg = ""
-                    }
-                }
-            }
-
-            val userRoleString = userRole.name // Convertir enum a String
-            val result = if (history.isEmpty()) {
-                GeminiService.sendMessage(userMessage, userRoleString)
-            } else {
-                GeminiService.sendMessageWithHistory(userMessage, history.takeLast(10), userRoleString)
-            }
-
+            val result = chatRepository.sendMessage(userMessage)
             isLoading = false
 
             result.fold(
@@ -168,7 +144,7 @@ fun DashboardScreen(
                 onFailure = { exception ->
                     errorMessage = exception.message ?: "Error al comunicarse con el asistente"
                     chatMessages = chatMessages + ChatMessage(
-                        text = "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta nuevamente.",
+                        text = "Lo siento, hubo un error al procesar tu mensaje. (${exception.message})",
                         isUser = false
                     )
                 }

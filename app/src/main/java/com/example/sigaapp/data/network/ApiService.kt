@@ -4,6 +4,8 @@ import com.example.sigaapp.BuildConfig
 import com.example.sigaapp.data.model.LoginRequest
 import com.example.sigaapp.data.model.LoginResponse
 import com.example.sigaapp.data.model.PermissionResponse
+import com.example.sigaapp.data.model.ChatRequest
+import com.example.sigaapp.data.model.ChatResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
@@ -70,6 +72,26 @@ class ApiService {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    suspend fun chat(message: String, token: String): Result<ChatResponse> {
+        return try {
+            val response = client.post("/api/saas/chat") {
+                header("Authorization", "Bearer $token")
+                setBody(ChatRequest(message))
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                // Manejar 402 específicamente si es necesario
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

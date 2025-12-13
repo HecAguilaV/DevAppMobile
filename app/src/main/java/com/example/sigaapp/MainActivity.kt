@@ -56,7 +56,9 @@ class MainActivity : ComponentActivity() {
                             // Obtener permisos actualizados de la sesión
                             val permissions = sessionManager.getPermissions()
                             
-                            DashboardScreen(navController, userRole, permissions)
+                            val chatRepository = com.example.sigaapp.data.repository.ChatRepository(apiService, sessionManager)
+                            
+                            DashboardScreen(navController, userRole, permissions, chatRepository)
                         }
                         composable("inventory") { InventoryScreen(navController) }
                         composable("sales") { SalesScreen(navController) }

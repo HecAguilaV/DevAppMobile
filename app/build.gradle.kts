@@ -31,9 +31,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
-
+        
         // If defined in local.properties, use it globally (overrides build types)
         if (localApiUrl != null) {
             buildConfigField("String", "API_BASE_URL", "\"$localApiUrl\"")
@@ -88,9 +86,6 @@ dependencies {
 
     // Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
-
-    // Google Generative AI (Gemini)
-    implementation("com.google.ai.client.generativeai:generativeai:0.2.2")
 
     // Coroutines para operaciones asíncronas
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

@@ -31,3 +31,16 @@ data class PermissionResponse(
     val success: Boolean,
     val permisos: List<String>
 )
+
+@Serializable
+data class ChatRequest(
+    val message: String
+)
+
+@Serializable
+data class ChatResponse(
+    val success: Boolean,
+    val response: String? = null,
+    val message: String? = null,
+    val action: String? = null
+)
