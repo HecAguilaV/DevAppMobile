@@ -33,8 +33,79 @@ fun InventoryScreen(
     val stockItems by viewModel.stockItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isCreating by viewModel.isCreating.collectAsState()
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sessionManager = remember { com.example.sigaapp.data.local.SessionManager(context) }
+    
+    // Permission Logic
+    val userRole = remember { sessionManager.getUserRole() }
+    val permissions = remember { sessionManager.getPermissions() }
+    val canCreateProduct = remember(userRole, permissions) {
+        userRole == "ADMINISTRADOR" || (userRole == "OPERADOR" && permissions.contains("PRODUCTOS_CREATE"))
+    }
+
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    // Dialog State
+    var newProductName by remember { mutableStateOf("") }
+    var newProductPrice by remember { mutableStateOf("") }
+    var newProductDesc by remember { mutableStateOf("") }
 
     val lowStockProducts = stockItems.filter { it.cantidad <= it.min_stock }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("Nuevo Producto") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newProductName,
+                        onValueChange = { newProductName = it },
+                        label = { Text("Nombre") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = newProductPrice,
+                        onValueChange = { newProductPrice = it },
+                        label = { Text("Precio") },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+                    OutlinedTextField(
+                        value = newProductDesc,
+                        onValueChange = { newProductDesc = it },
+                        label = { Text("Descripción (Opcional)") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val price = newProductPrice.toIntOrNull()
+                        if (newProductName.isNotBlank() && price != null) {
+                            viewModel.addProduct(newProductName, price, newProductDesc)
+                            showAddDialog = false
+                            newProductName = ""
+                            newProductPrice = ""
+                            newProductDesc = ""
+                        }
+                    },
+                    enabled = !isCreating
+                ) {
+                    Text("Crear")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -62,6 +133,17 @@ fun InventoryScreen(
                     containerColor = AccentCyan
                 )
             )
+        },
+        floatingActionButton = {
+            if (canCreateProduct) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    containerColor = AccentCyan,
+                    contentColor = White
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Agregar Producto")
+                }
+            }
         },
         containerColor = Background
     ) { paddingValues ->
@@ -265,7 +347,7 @@ fun InventoryScreen(
                 }
             }
             
-            if (isLoading) {
+            if (isLoading || isCreating) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                     color = AccentCyan

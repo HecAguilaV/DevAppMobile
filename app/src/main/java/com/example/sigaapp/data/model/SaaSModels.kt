@@ -48,3 +48,16 @@ data class VentasListResponse(
     val success: Boolean,
     val ventas: List<Sale> = emptyList()
 )
+
+@Serializable
+data class ProductRequest(
+    val nombre: String,
+    val precio: Int,
+    val descripcion: String? = null
+)
+
+@Serializable
+data class ProductResponse(
+    val success: Boolean,
+    val producto: Product
+)

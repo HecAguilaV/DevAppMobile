@@ -21,6 +21,8 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import com.example.sigaapp.data.model.ProductRequest
+import com.example.sigaapp.data.model.ProductResponse
 import org.json.JSONObject
 
 class ApiService {
@@ -137,6 +139,25 @@ class ApiService {
             json.optString("message", "Error desconocido")
         } catch (e: Exception) {
             "Error de conexión"
+        }
+    }
+
+    suspend fun createProduct(product: ProductRequest, token: String): Result<ProductResponse> {
+        return try {
+            val response = client.post("/api/saas/productos") {
+                header("Authorization", "Bearer $token")
+                setBody(product)
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

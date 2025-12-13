@@ -18,6 +18,9 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _isCreating = MutableStateFlow(false)
+    val isCreating: StateFlow<Boolean> = _isCreating
+
     init {
         loadInventory()
     }
@@ -38,5 +41,25 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
             )
             _isLoading.value = false
         }
+    }
+
+    fun addProduct(nombre: String, precio: Int, descripcion: String?) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            repository.createProduct(nombre, precio, descripcion).fold(
+                onSuccess = {
+                    loadInventory() // Recargar para ver el nuevo producto (aunque sea stock 0)
+                },
+                onFailure = { e ->
+                    // Por ahora mostramos error genérico, idealmente un evento de UI único
+                    _error.value = "Error al crear producto: ${e.message}"
+                }
+            )
+            _isCreating.value = false
+        }
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }
