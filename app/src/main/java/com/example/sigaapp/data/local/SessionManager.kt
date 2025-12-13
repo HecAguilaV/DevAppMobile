@@ -95,6 +95,12 @@ class SessionManager(context: Context) {
             .apply()
     }
 
+    fun isBiometricEnabled(): Boolean {
+        val email = prefs.getString(KEY_SAVED_EMAIL, null)
+        val pass = prefs.getString(KEY_SAVED_PASS, null)
+        return !email.isNullOrBlank() && !pass.isNullOrBlank()
+    }
+
     // Notificaciones
 
     fun getNotificationSettings(): Pair<Boolean, Boolean> {

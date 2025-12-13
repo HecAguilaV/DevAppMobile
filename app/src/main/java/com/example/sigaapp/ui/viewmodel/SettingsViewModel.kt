@@ -16,6 +16,9 @@ class SettingsViewModel(private val sessionManager: SessionManager) : ViewModel(
     private val _cardSize = MutableStateFlow(CardSize.MEDIUM)
     val cardSize: StateFlow<CardSize> = _cardSize.asStateFlow()
 
+    private val _biometricEnabled = MutableStateFlow(false)
+    val biometricEnabled: StateFlow<Boolean> = _biometricEnabled.asStateFlow()
+
     init {
         loadSettings()
     }
@@ -26,6 +29,25 @@ class SettingsViewModel(private val sessionManager: SessionManager) : ViewModel(
             CardSize.valueOf(savedSize)
         } catch (e: Exception) {
             CardSize.MEDIUM
+        }
+        _biometricEnabled.value = sessionManager.isBiometricEnabled()
+    }
+    
+    fun toggleBiometric(enable: Boolean) {
+        if (!enable) {
+            sessionManager.clearCredentials()
+            _biometricEnabled.value = false
+        } else {
+            // Re-enabling requires saving credentials which we can't do here securely without re-entry.
+            // UI should handle the "enable" flow by prompting re-login or warning the user.
+            // For now, if the user tries to enable via switch but has no creds, it stays false.
+            if (sessionManager.isBiometricEnabled()) {
+                 _biometricEnabled.value = true
+            } else {
+                // If not enabled, we can't just flip it to true without creds.
+                // The UI will likely show a message saying "Login again to enable".
+                _biometricEnabled.value = false
+            }
         }
     }
 

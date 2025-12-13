@@ -32,6 +32,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     var showAboutDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
+    var showBiometricDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -157,7 +158,7 @@ fun SettingsScreen(
                     icon = Icons.Default.Security,
                     title = "Seguridad",
                     subtitle = "Cambiar contraseña y configuración biometrica",
-                    onClick = { /* TODO implemented via library logic mainly */ }
+                    onClick = { showBiometricDialog = true }
                 )
             }
 
@@ -232,6 +233,54 @@ fun SettingsScreen(
                 dismissButton = {
                     TextButton(onClick = { showNotificationsDialog = false }) {
                         Text("Cancelar")
+                    }
+                }
+            )
+        }
+        
+        if (showBiometricDialog) {
+            val isEnabled by viewModel.biometricEnabled.collectAsState()
+            
+            AlertDialog(
+                onDismissRequest = { showBiometricDialog = false },
+                title = { Text("Seguridad Biométrica") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(
+                            text = "Gestiona el inicio de sesión rápido mediante huella o rostro.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                        Row(
+                             modifier = Modifier.fillMaxWidth(),
+                             horizontalArrangement = Arrangement.SpaceBetween,
+                             verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Habilitar Biometría")
+                            Switch(
+                                checked = isEnabled,
+                                onCheckedChange = { checked ->
+                                    if (!checked) {
+                                        viewModel.toggleBiometric(false)
+                                    } else {
+                                        // User trying to enable
+                                        // We show a message that re-login is required if not already enabled
+                                    }
+                                }
+                            )
+                        }
+                        if (!isEnabled) {
+                             Text(
+                                text = "⚠️ Para habilitar, cierra sesión e ingresa nuevamente marcando 'Guardar credenciales'.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AlertRed
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showBiometricDialog = false }) {
+                        Text("Cerrar")
                     }
                 }
             )
