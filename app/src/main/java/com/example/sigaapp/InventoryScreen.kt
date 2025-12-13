@@ -44,25 +44,128 @@ fun InventoryScreen(
     val canCreateProduct = remember(userRole, permissions) {
         userRole == "ADMINISTRADOR" || (userRole == "OPERADOR" && permissions.contains("PRODUCTOS_CREATE"))
     }
-
     var showAddDialog by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
+    var showCreateCategoryDialog by remember { mutableStateOf(false) }
 
     // Dialog State
     var newProductName by remember { mutableStateOf("") }
     var newProductPrice by remember { mutableStateOf("") }
     var newProductDesc by remember { mutableStateOf("") }
+    var newProductStock by remember { mutableStateOf("") } // For quantity editing
+    var newCategoryName by remember { mutableStateOf("") } // For category creation
+    var newCategoryDesc by remember { mutableStateOf("") }
 
     // Multi-Local State
     val locales by viewModel.locales.collectAsState()
     val selectedLocal by viewModel.selectedLocal.collectAsState()
     var expandedLocalMenu by remember { mutableStateOf(false) }
+    
+    // Categories State
+    val categories by viewModel.categories.collectAsState()
 
     val lowStockProducts = stockItems.filter { it.cantidad <= it.min_stock }
 
+    var editingStockItem by remember { mutableStateOf<StockItem?>(null) }
+    
+    // Reset fields
+    LaunchedEffect(showAddDialog) {
+        if (!showAddDialog) {
+            if (editingStockItem == null) {
+                newProductName = ""
+                newProductPrice = ""
+                newProductDesc = ""
+                newProductStock = ""
+            }
+        }
+    }
+
+    // Category Creation Dialog
+    if (showCreateCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreateCategoryDialog = false },
+            title = { Text("Nueva Categoría") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newCategoryName,
+                        onValueChange = { newCategoryName = it },
+                        label = { Text("Nombre") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = newCategoryDesc,
+                        onValueChange = { newCategoryDesc = it },
+                        label = { Text("Descripción (Opcional)") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newCategoryName.isNotBlank()) {
+                            viewModel.createCategory(newCategoryName, newCategoryDesc)
+                            showCreateCategoryDialog = false
+                            newCategoryName = ""
+                            newCategoryDesc = ""
+                        }
+                    }
+                ) {
+                    Text("Crear")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateCategoryDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    // List Categories Dialog
+    if (showCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showCategoryDialog = false },
+            title = { Text("Categorías") },
+            text = {
+                Column {
+                    Button(
+                        onClick = { showCreateCategoryDialog = true },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentCyan)
+                    ) {
+                        Text("Nueva Categoría")
+                    }
+                    LazyColumn(
+                        modifier = Modifier.height(200.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(categories) { cat ->
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = SurfaceLight),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = cat.nombre,
+                                    modifier = Modifier.padding(12.dp),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCategoryDialog = false }) { Text("Cerrar") }
+            }
+        )
+    }
+
     if (showAddDialog) {
         AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Nuevo Producto") },
+            onDismissRequest = { 
+                showAddDialog = false 
+                editingStockItem = null
+            },
+            title = { Text(if (editingStockItem == null) "Nuevo Producto" else "Editar Producto") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -85,27 +188,58 @@ fun InventoryScreen(
                         onValueChange = { newProductDesc = it },
                         label = { Text("Descripción (Opcional)") }
                     )
+                    if (editingStockItem != null) {
+                         OutlinedTextField(
+                            value = newProductStock,
+                            onValueChange = { newProductStock = it },
+                            label = { Text("Stock (Cantidad)") },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = AccentTurquoise.copy(alpha=0.1f),
+                                unfocusedContainerColor = AccentTurquoise.copy(alpha=0.1f)
+                            )
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         val price = newProductPrice.toIntOrNull()
+                        val stock = newProductStock.toIntOrNull()
+                        
                         if (newProductName.isNotBlank() && price != null) {
-                            viewModel.addProduct(newProductName, price, newProductDesc)
+                            if (editingStockItem == null) {
+                                viewModel.addProduct(newProductName, price, newProductDesc)
+                            } else {
+                                // Update Product Details
+                                viewModel.updateProduct(editingStockItem!!.producto_id, newProductName, price, newProductDesc)
+                                // Update Stock if changed and valid
+                                if (stock != null && stock != editingStockItem!!.cantidad) {
+                                    viewModel.updateStock(editingStockItem!!.id, stock)
+                                }
+                            }
                             showAddDialog = false
+                            editingStockItem = null
                             newProductName = ""
                             newProductPrice = ""
                             newProductDesc = ""
+                            newProductStock = ""
                         }
                     },
                     enabled = !isCreating
                 ) {
-                    Text("Crear")
+                    Text(if (editingStockItem == null) "Crear" else "Guardar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) {
+                TextButton(onClick = { 
+                    showAddDialog = false 
+                    editingStockItem = null
+                }) {
                     Text("Cancelar")
                 }
             }
@@ -142,7 +276,14 @@ fun InventoryScreen(
         floatingActionButton = {
             if (canCreateProduct) {
                 FloatingActionButton(
-                    onClick = { showAddDialog = true },
+                    onClick = { 
+                        editingStockItem = null
+                        newProductName = ""
+                        newProductPrice = ""
+                        newProductDesc = ""
+                        newProductStock = ""
+                        showAddDialog = true 
+                    },
                     containerColor = AccentCyan,
                     contentColor = White
                 ) {
@@ -160,46 +301,61 @@ fun InventoryScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Selector de Local
-                
-                if (locales.isNotEmpty()) {
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
-                            ExposedDropdownMenuBox(
-                                expanded = expandedLocalMenu,
-                                onExpandedChange = { expandedLocalMenu = !expandedLocalMenu }
-                            ) {
-                                OutlinedTextField(
-                                    value = selectedLocal?.nombre ?: "Todos los Locales",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Filtrar por Local") },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLocalMenu) },
-                                    modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = SurfaceLight,
-                                        unfocusedContainerColor = SurfaceLight
-                                    )
-                                )
-                                ExposedDropdownMenu(
+                // Actions Row (Local Filter + Categories)
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Categories Button
+                        Button(
+                            onClick = { showCategoryDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceLight, contentColor = TextPrimary),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(0.4f).height(56.dp)
+                        ) {
+                            Text("Categorías", style = MaterialTheme.typography.bodySmall)
+                        }
+
+                         // Selector de Local
+                        if (locales.isNotEmpty()) {
+                            Box(modifier = Modifier.weight(0.6f)) {
+                                ExposedDropdownMenuBox(
                                     expanded = expandedLocalMenu,
-                                    onDismissRequest = { expandedLocalMenu = false }
+                                    onExpandedChange = { expandedLocalMenu = !expandedLocalMenu }
                                 ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Todos los Locales") },
-                                        onClick = {
-                                            viewModel.selectLocal(null)
-                                            expandedLocalMenu = false
-                                        }
+                                    OutlinedTextField(
+                                        value = selectedLocal?.nombre ?: "Todos",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Local") },
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLocalMenu) },
+                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = SurfaceLight,
+                                            unfocusedContainerColor = SurfaceLight
+                                        )
                                     )
-                                    locales.forEach { local ->
+                                    ExposedDropdownMenu(
+                                        expanded = expandedLocalMenu,
+                                        onDismissRequest = { expandedLocalMenu = false }
+                                    ) {
                                         DropdownMenuItem(
-                                            text = { Text(local.nombre) },
+                                            text = { Text("Todos") },
                                             onClick = {
-                                                viewModel.selectLocal(local)
+                                                viewModel.selectLocal(null)
                                                 expandedLocalMenu = false
                                             }
                                         )
+                                        locales.forEach { local ->
+                                            DropdownMenuItem(
+                                                text = { Text(local.nombre) },
+                                                onClick = {
+                                                    viewModel.selectLocal(local)
+                                                    expandedLocalMenu = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -323,9 +479,11 @@ fun InventoryScreen(
     
                 items(stockItems) { item: StockItem ->
                     val isLowStock = item.cantidad <= item.min_stock
-                    val itemNombre = item.producto?.nombre ?: "Producto s/n" // "sin nombre"
-                    val itemUnit = "u." 
-                    val itemLocation = "Sucursal ${item.local_id}" 
+                    val itemNombre = item.producto?.nombre ?: "Producto s/n"
+                    val itemPrecio = item.producto?.precio ?: 0
+                    val itemDesc = item.producto?.descripcion ?: ""
+                    
+                    var showMenu by remember { mutableStateOf(false) }
                     
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -370,19 +528,51 @@ fun InventoryScreen(
                                     color = TextPrimary
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "$$itemPrecio",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextPrimary
+                                )
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Text(
-                                        text = "📍 $itemLocation",
+                                        text = "📍 Sucursal ${item.local_id}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextSecondary
                                     )
                                     Text(
-                                        text = "📦 Mín: ${item.min_stock} $itemUnit",
+                                        text = "📦 Mín: ${item.min_stock}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextSecondary
                                     )
+                                }
+                                
+                                if (canCreateProduct) {
+                                     // Quick Actions
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                        IconButton(
+                                            onClick = {
+                                                // Prepare Edit
+                                                editingStockItem = item
+                                                newProductName = itemNombre
+                                                newProductPrice = itemPrecio.toString()
+                                                newProductDesc = itemDesc
+                                                newProductStock = item.cantidad.toString()
+                                                showAddDialog = true
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(Icons.Default.Edit, "Editar", tint = AccentCyan)
+                                        }
+                                        IconButton(
+                                            onClick = { viewModel.deleteProduct(item.producto_id) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, "Eliminar", tint = AlertRed)
+                                        }
+                                    }
                                 }
                             }
     

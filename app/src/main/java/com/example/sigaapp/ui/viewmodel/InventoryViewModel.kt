@@ -41,6 +41,9 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
     private val _isCreating = MutableStateFlow(false)
     val isCreating: StateFlow<Boolean> = _isCreating
 
+    private val _categories = MutableStateFlow<List<com.example.sigaapp.data.model.Category>>(emptyList())
+    val categories: StateFlow<List<com.example.sigaapp.data.model.Category>> = _categories
+
     init {
         loadData()
     }
@@ -53,6 +56,10 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
             // Load Locales
             repository.getLocales().onSuccess { 
                 _locales.value = it 
+            }
+            // Load Categories
+            repository.getCategories().onSuccess {
+                _categories.value = it
             }
             // Load Stock
             repository.getStock().fold(
@@ -84,11 +91,70 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
                     loadInventory() // Recargar para ver el nuevo producto (aunque sea stock 0)
                 },
                 onFailure = { e ->
-                    // Por ahora mostramos error genérico, idealmente un evento de UI único
                     _error.value = "Error al crear producto: ${e.message}"
                 }
             )
             _isCreating.value = false
+        }
+    }
+
+    fun updateProduct(id: Int, nombre: String, precio: Int, descripcion: String?) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            repository.updateProduct(id, nombre, precio, descripcion).fold(
+                onSuccess = {
+                    loadInventory()
+                },
+                onFailure = { e ->
+                    _error.value = "Error al actualizar: ${e.message}"
+                }
+            )
+            _isCreating.value = false
+        }
+    }
+
+    fun createCategory(nombre: String, descripcion: String?) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            repository.createCategory(nombre, descripcion).fold(
+                onSuccess = {
+                    repository.getCategories().onSuccess { _categories.value = it }
+                },
+                onFailure = { e ->
+                    _error.value = "Error al crear categoría: ${e.message}"
+                }
+            )
+            _isCreating.value = false
+        }
+    }
+
+    fun updateStock(id: Int, cantidad: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.updateStock(id, cantidad).fold(
+                onSuccess = {
+                    loadInventory()
+                },
+                onFailure = { e ->
+                    _error.value = "Error al actualizar stock: ${e.message}"
+                }
+            )
+            _isLoading.value = false
+        }
+    }
+
+    fun deleteProduct(id: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.deleteProduct(id).fold(
+                onSuccess = {
+                    loadInventory()
+                },
+                onFailure = { e ->
+                    _error.value = "Error al eliminar: ${e.message}"
+                }
+            )
+            _isLoading.value = false
         }
     }
 

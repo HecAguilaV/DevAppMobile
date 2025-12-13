@@ -11,9 +11,11 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -162,6 +164,43 @@ class ApiService {
         }
     }
 
+    suspend fun updateProduct(id: Int, product: ProductRequest, token: String): Result<ProductResponse> {
+        return try {
+            val response = client.put("/api/saas/productos/$id") {
+                header("Authorization", "Bearer $token")
+                setBody(product)
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteProduct(id: Int, token: String): Result<Boolean> {
+        return try {
+            val response = client.delete("/api/saas/productos/$id") {
+                header("Authorization", "Bearer $token")
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(true)
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getLocales(token: String): Result<LocalesResponse> {
         return try {
             val response = client.get("/api/saas/locales") {
@@ -170,6 +209,59 @@ class ApiService {
 
             if (response.status.isSuccess()) {
                 Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCategories(token: String): Result<com.example.sigaapp.data.model.CategoriesResponse> {
+        return try {
+            val response = client.get("/api/saas/categorias") {
+                header("Authorization", "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createCategory(category: com.example.sigaapp.data.model.CategoryRequest, token: String): Result<com.example.sigaapp.data.model.CategoryResponse> {
+        return try {
+            val response = client.post("/api/saas/categorias") {
+                header("Authorization", "Bearer $token")
+                setBody(category)
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateStock(id: Int, quantity: Int, token: String): Result<Boolean> {
+        return try {
+            val response = client.put("/api/saas/stock/$id") { // Update stock item
+                header("Authorization", "Bearer $token")
+                setBody(com.example.sigaapp.data.model.StockUpdateRequest(quantity))
+            }
+            if (response.status.isSuccess()) {
+                Result.success(true)
             } else {
                 val errorBody = response.bodyAsText()
                 val errorMsg = parseErrorMessage(errorBody)

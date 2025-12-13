@@ -7,7 +7,7 @@ data class Product(
     val id: Int,
     val nombre: String,
     val descripcion: String? = null,
-    val precio: Int, // Asumiendo precio entero en pesos
+    val precio: Int? = null, // Asumiendo precio entero en pesos, nullable para evitar crash
     val codigo: String? = null
 )
 
@@ -50,10 +50,41 @@ data class VentasListResponse(
 )
 
 @Serializable
+data class Category(
+    val id: Int,
+    val nombre: String,
+    val descripcion: String? = null
+)
+
+@Serializable
+data class CategoryRequest(
+    val nombre: String,
+    val descripcion: String? = null
+)
+
+@Serializable
+data class CategoriesResponse(
+    val success: Boolean,
+    val categorias: List<Category> = emptyList()
+)
+
+@Serializable
+data class CategoryResponse(
+    val success: Boolean,
+    val categoria: Category
+)
+
+@Serializable
+data class StockUpdateRequest(
+    val cantidad: Int
+)
+
+@Serializable
 data class ProductRequest(
     val nombre: String,
     val precio: Int,
-    val descripcion: String? = null
+    val descripcion: String? = null,
+    val categoria_id: Int? = null 
 )
 
 @Serializable

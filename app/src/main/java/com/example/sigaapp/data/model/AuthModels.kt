@@ -39,8 +39,17 @@ data class ChatRequest(
 
 @Serializable
 data class ChatResponse(
-    val success: Boolean,
+    val success: Boolean = false,
+    val succes: Boolean? = null, // Backend typo handling
     val response: String? = null,
     val message: String? = null,
-    val action: String? = null
+    val action: ChatAction? = null
+)
+
+@Serializable
+data class ChatAction(
+    val executed: Boolean,
+    val type: String? = null,
+    val data: String? = null,
+    val requiresConfirmation: Boolean
 )

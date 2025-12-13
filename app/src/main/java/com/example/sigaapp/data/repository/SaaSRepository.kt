@@ -25,8 +25,35 @@ class SaaSRepository(
         return apiService.createProduct(request, token).map { it.producto }
     }
 
+    suspend fun updateProduct(id: Int, nombre: String, precio: Int, descripcion: String?): Result<com.example.sigaapp.data.model.Product> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        val request = com.example.sigaapp.data.model.ProductRequest(nombre, precio, descripcion)
+        return apiService.updateProduct(id, request, token).map { it.producto }
+    }
+
+    suspend fun deleteProduct(id: Int): Result<Boolean> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        return apiService.deleteProduct(id, token)
+    }
+
     suspend fun getLocales(): Result<List<com.example.sigaapp.data.model.Local>> {
         val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
         return apiService.getLocales(token).map { it.locales }
+    }
+
+    suspend fun getCategories(): Result<List<com.example.sigaapp.data.model.Category>> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        return apiService.getCategories(token).map { it.categorias }
+    }
+
+    suspend fun createCategory(nombre: String, descripcion: String?): Result<com.example.sigaapp.data.model.Category> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        val request = com.example.sigaapp.data.model.CategoryRequest(nombre, descripcion)
+        return apiService.createCategory(request, token).map { it.categoria }
+    }
+
+    suspend fun updateStock(id: Int, cantidad: Int): Result<Boolean> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        return apiService.updateStock(id, cantidad, token)
     }
 }
