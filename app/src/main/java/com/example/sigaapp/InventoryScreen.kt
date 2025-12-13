@@ -15,6 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.sigaapp.ui.theme.*
+import com.example.sigaapp.data.model.StockItem
+import com.example.sigaapp.data.model.Product
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.example.sigaapp.ui.viewmodel.InventoryViewModel
 
 // Product data class removed (using StockItem from models)
 
@@ -153,7 +159,7 @@ fun InventoryScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "${stockItems.sumOf { it.cantidad }}",
+                                    text = "${stockItems.sumOf { it: StockItem -> it.cantidad }}",
                                     style = MaterialTheme.typography.headlineMedium.copy(
                                         fontWeight = FontWeight.Bold
                                     ),
@@ -181,7 +187,7 @@ fun InventoryScreen(
                     )
                 }
     
-                items(stockItems) { item ->
+                items(stockItems) { item: StockItem ->
                     val isLowStock = item.cantidad <= item.min_stock
                     val itemNombre = item.producto?.nombre ?: "Producto s/n" // "sin nombre"
                     val itemUnit = "u." 

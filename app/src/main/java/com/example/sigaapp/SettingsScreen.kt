@@ -150,6 +150,42 @@ fun SettingsScreen(
                 )
             }
 // ...
+// Notification dialog moved to end of file
+
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Security,
+                    title = "Seguridad",
+                    subtitle = "Cambiar contraseña y configuración biometrica",
+                    onClick = { /* TODO implemented via library logic mainly */ }
+                )
+            }
+
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "Acerca de",
+                    subtitle = "Versión 1.0.0 - SIGA Mobile",
+                    onClick = { showAboutDialog = true }
+                )
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Support,
+                    title = "Soporte",
+                    subtitle = "hdaguila@gmail.com",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:hdaguila@gmail.com")
+                            putExtra(Intent.EXTRA_SUBJECT, "Soporte SIGA Mobile")
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+            }
+        }
+        
         if (showNotificationsDialog) {
             var pushEnabled by remember { mutableStateOf(viewModel.getNotificationSettings().first) }
             var stockEnabled by remember { mutableStateOf(viewModel.getNotificationSettings().second) }
@@ -199,40 +235,6 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
-
-            item {
-                SettingsItem(
-                    icon = Icons.Default.Security,
-                    title = "Seguridad",
-                    subtitle = "Cambiar contraseña y configuración biometrica",
-                    onClick = { /* TODO implemented via library logic mainly */ }
-                )
-            }
-
-            item {
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "Acerca de",
-                    subtitle = "Versión 1.0.0 - SIGA Mobile",
-                    onClick = { showAboutDialog = true }
-                )
-            }
-            
-            item {
-                SettingsItem(
-                    icon = Icons.Default.Support,
-                    title = "Soporte",
-                    subtitle = "hdaguila@gmail.com",
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:hdaguila@gmail.com")
-                            putExtra(Intent.EXTRA_SUBJECT, "Soporte SIGA Mobile")
-                        }
-                        context.startActivity(intent)
-                    }
-                )
-            }
         }
         
         if (showAboutDialog) {

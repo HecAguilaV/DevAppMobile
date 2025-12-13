@@ -4,15 +4,30 @@ import android.content.Context
 import android.content.SharedPreferences
 
 class SessionManager(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("siga_prefs", Context.MODE_PRIVATE)
 
     companion object {
+        private const val PREF_NAME = "SigaSession"
         private const val KEY_ACCESS_TOKEN = "access_token"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_ROLE = "user_role"
         private const val KEY_USER_NAME = "user_name"
-        private const val KEY_PERMISSIONS = "permissions"
+        private const val KEY_PERMISSIONS = "user_permissions"
+        
+        // Configuration
+        private const val KEY_CARD_SIZE = "card_size"
+        
+        // Biometrics
+        private const val KEY_BIOMETRIC_USER = "biometric_user"
+        private const val KEY_BIOMETRIC_PASS = "biometric_pass"
+        private const val KEY_SAVED_EMAIL = "saved_email"
+        private const val KEY_SAVED_PASS = "saved_pass"
+        
+        // Notifications
+        private const val KEY_NOTIF_PUSH = "notif_push"
+        private const val KEY_NOTIF_STOCK = "notif_stock"
     }
+
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
     fun saveAuthSession(token: String, userId: Int, role: String, nombre: String?) {
         prefs.edit().apply {
@@ -46,7 +61,6 @@ class SessionManager(context: Context) {
     }
     
     // Configuración
-    private const val KEY_CARD_SIZE = "card_size"
 
     fun saveCardSize(size: String) {
         prefs.edit().putString(KEY_CARD_SIZE, size).apply()
@@ -57,8 +71,6 @@ class SessionManager(context: Context) {
     }
 
     // Biometría (MVP: Guardar credenciales para login rápido)
-    private const val KEY_SAVED_EMAIL = "saved_email"
-    private const val KEY_SAVED_PASS = "saved_pass"
 
     fun saveCredentials(email: String, pass: String) {
         prefs.edit()
@@ -84,8 +96,6 @@ class SessionManager(context: Context) {
     }
 
     // Notificaciones
-    private const val KEY_NOTIF_PUSH = "notif_push"
-    private const val KEY_NOTIF_STOCK = "notif_stock"
 
     fun getNotificationSettings(): Pair<Boolean, Boolean> {
         return Pair(
