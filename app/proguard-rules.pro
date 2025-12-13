@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Reglas para API Key de Gemini
+# Nota: BuildConfig se compila en la APK, considera usar backend proxy para producción
+-keep class com.example.sigaapp.BuildConfig { *; }

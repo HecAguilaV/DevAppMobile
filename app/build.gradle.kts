@@ -1,7 +1,11 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -9,6 +13,14 @@ android {
     compileSdk {
         version = release(36)
     }
+
+    // Load local.properties once
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(FileInputStream(localPropertiesFile))
+    }
+    val localApiUrl = localProperties.getProperty("API_URL")
 
     defaultConfig {
         applicationId = "com.example.sigaapp"
@@ -18,10 +30,29 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+
+        // If defined in local.properties, use it globally (overrides build types)
+        if (localApiUrl != null) {
+            buildConfigField("String", "API_BASE_URL", "\"$localApiUrl\"")
+        }
     }
 
     buildTypes {
+        debug {
+            // Default for debug if not in local.properties
+            if (localApiUrl == null) {
+                buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080\"")
+            }
+        }
         release {
+            // Default for release if not in local.properties
+            if (localApiUrl == null) {
+                buildConfigField("String", "API_BASE_URL", "\"https://siga-backend-production.up.railway.app\"")
+            }
+            
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -38,6 +69,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -56,6 +88,23 @@ dependencies {
 
     // Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
+
+    // Google Generative AI (Gemini)
+    implementation("com.google.ai.client.generativeai:generativeai:0.2.2")
+
+    // Coroutines para operaciones asíncronas
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    // ViewModel para manejar estado
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+    
+    // Ktor Client
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
