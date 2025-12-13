@@ -31,6 +31,7 @@ import android.speech.RecognizerIntent
 import androidx.compose.ui.res.painterResource
 import com.example.sigaapp.service.VoiceService
 import com.example.sigaapp.ui.theme.*
+import com.example.sigaapp.ui.viewmodel.CardSize
 import kotlinx.coroutines.launch
 
 enum class UserRole { ADMINISTRADOR, OPERADOR, CAJERO }
@@ -42,7 +43,7 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-import com.example.sigaapp.ui.viewmodel.CardSize
+// Moved import to top
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -311,6 +312,7 @@ fun DashboardScreen(
                     title = "Soporte",
                     icon = Icons.Default.Support,
                     color = AccentCyan,
+                    enabled = true,
                     size = TileSize.SMALL, // Default text style uses SMALL if not provided, but DashboardTile size defaults to SMALL too
                     cardSizePreference = cardSize,
                     onClick = {
@@ -325,6 +327,7 @@ fun DashboardScreen(
                     title = "Salir",
                     icon = Icons.Default.ExitToApp,
                     color = AlertRed,
+                    enabled = true,
                     size = TileSize.SMALL,
                     cardSizePreference = cardSize,
                     onClick = {
