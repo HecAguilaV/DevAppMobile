@@ -1,6 +1,5 @@
-<p align="center">
-<img src="docs/brand/Logo_SIGA.png" alt="Logo SIGA" width="260" />
-</p>
+# SIGA Mobile App
+> Última Sincronización: 13/12/2025 (Recuperación)
 
 # SIGA (Sistema Inteligente de Gestión de Activos)
 > Para que nunca te detengas. • No gestiones tu Inventario, Gestiona tu Tiempo.
@@ -113,14 +112,14 @@ Unifica el backend (Ktor) y la lógica móvil compartida (KMM), reduciendo la du
 ---
 
 ## Stack Tecnológico
-| Capa | Tecnología | Justificación |
-| :--- | :--- | :--- |
-| Frontend Web | Svelte + Bulma | UX fluida y simple. |
-| Mobile (Android) | Kotlin + Jetpack Compose | Nativo y moderno. |
-| Mobile (iOS) | KMM (core) + SwiftUI | Lógica compartida, UI nativa. |
-| Backend | Kotlin (Ktor) | API robusta y de alto rendimiento. |
-| Base de Datos | PostgreSQL | Fiable y escalable. |
-| IA | Google Gemini API (Kotlin SDK) | Chatbots conversacionales, insights y análisis inteligente. |
+| Capa             | Tecnología                     | Justificación                                               |
+| :--------------- | :----------------------------- | :---------------------------------------------------------- |
+| Frontend Web     | Svelte + Bulma                 | UX fluida y simple.                                         |
+| Mobile (Android) | Kotlin + Jetpack Compose       | Nativo y moderno.                                           |
+| Mobile (iOS)     | KMM (core) + SwiftUI           | Lógica compartida, UI nativa.                               |
+| Backend          | Kotlin (Ktor)                  | API robusta y de alto rendimiento.                          |
+| Base de Datos    | PostgreSQL                     | Fiable y escalable.                                         |
+| IA               | Google Gemini API (Kotlin SDK) | Chatbots conversacionales, insights y análisis inteligente. |
 
 ---
 
