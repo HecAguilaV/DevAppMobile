@@ -363,7 +363,6 @@ fun InventoryScreen(
                     }
                 }
 
-                // ... (Alertas y Resumen igual) ...
                 // Alertas de stock bajo
                 if (lowStockProducts.isNotEmpty()) {
                     item {
@@ -491,7 +490,8 @@ fun InventoryScreen(
                             containerColor = SurfaceLight
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        onClick = { showMenu = true }
                     ) {
                         Row(
                             modifier = Modifier
