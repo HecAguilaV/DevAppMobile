@@ -40,7 +40,12 @@ class MainActivity : ComponentActivity() {
                     
                     // Determinar destino inicial
                     val startDestination = if (sessionManager.isLoggedIn()) {
-                        val role = sessionManager.getUserRole() ?: "OPERADOR"
+                        val roleRaw = sessionManager.getUserRole() ?: "OPERADOR"
+                        val role = when (roleRaw.uppercase()) {
+                            "ADMIN", "ADMINISTRADOR" -> "ADMINISTRADOR"
+                            "CAJERO" -> "CAJERO"
+                            else -> "OPERADOR"
+                        }
                         "dashboard/$role"
                     } else {
                         "login"
@@ -56,7 +61,11 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val roleString = backStackEntry.arguments?.getString("userRole") ?: "OPERADOR"
                             val userRole = try {
-                                UserRole.valueOf(roleString.uppercase())
+                                when (roleString.uppercase()) {
+                                    "ADMIN", "ADMINISTRADOR" -> UserRole.ADMINISTRADOR
+                                    "CAJERO" -> UserRole.CAJERO
+                                    else -> UserRole.OPERADOR
+                                }
                             } catch (e: Exception) {
                                 UserRole.OPERADOR
                             }

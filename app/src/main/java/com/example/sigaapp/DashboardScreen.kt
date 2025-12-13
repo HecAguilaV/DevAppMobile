@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import android.content.Intent
 import android.speech.RecognizerIntent
+import androidx.compose.ui.res.painterResource
 import com.example.sigaapp.service.VoiceService
 import com.example.sigaapp.ui.theme.*
 import kotlinx.coroutines.launch
@@ -211,9 +212,10 @@ fun DashboardScreen(
                     modifier = Modifier
                 ) {
                     Icon(
-                        Icons.Default.AutoAwesome,
+                        painter = painterResource(id = R.drawable.logosiga),
                         contentDescription = "Asistente IA",
-                        tint = White
+                        tint = Color.Unspecified, // Keep original colors
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -289,20 +291,8 @@ fun DashboardScreen(
                     }
                 )
             }
-            // Tile de Chat con SIGA (destacado)
-            item(span = { GridItemSpan(2) }) {
-                DashboardTile(
-                    title = "Chat con SIGA",
-                    icon = Icons.Default.AutoAwesome,
-                    color = EmeraldOps,
-                    enabled = permissions.contains("ASISTENTE_USAR") || userRole == UserRole.ADMINISTRADOR,
-                    size = TileSize.MEDIUM,
-                    cardSizePreference = cardSize,
-                    onClick = {
-                        showBottomSheet = true
-                    }
-                )
-            }
+            // Tile de Chat con SIGA REMOVED as per user request
+            // Only using FAB now
             item { 
                 DashboardTile(
                     title = "Ajustes",

@@ -16,15 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.sigaapp.ui.theme.*
 
-// Datos de ejemplo para inventario
-data class Product(
-    val id: String,
-    val name: String,
-    val stock: Int,
-    val minStock: Int,
-    val unit: String,
-    val location: String
-)
+// Product data class removed (using StockItem from models)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,9 +183,9 @@ fun InventoryScreen(
     
                 items(stockItems) { item ->
                     val isLowStock = item.cantidad <= item.min_stock
-                    val itemNombre = item.producto?.nombre ?: "Producto #${item.producto_id}"
-                    val itemUnit = "unidades" // Default
-                    val itemLocation = "Local ${item.local_id}" 
+                    val itemNombre = item.producto?.nombre ?: "Producto s/n" // "sin nombre"
+                    val itemUnit = "u." 
+                    val itemLocation = "Sucursal ${item.local_id}" 
                     
                     Card(
                         modifier = Modifier.fillMaxWidth(),
