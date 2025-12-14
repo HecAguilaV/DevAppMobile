@@ -273,6 +273,23 @@ class ApiService {
         }
     }
 
+    suspend fun deleteCategory(id: Int, token: String): Result<Boolean> {
+        return try {
+            val response = client.delete("/api/saas/categorias/$id") {
+                header("Authorization", "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(true)
+            } else {
+                val errorBody = response.bodyAsText()
+                val errorMsg = parseErrorMessage(errorBody)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updateStock(id: Int, quantity: Int, token: String): Result<Boolean> {
         return try {
             val response = client.put("/api/saas/stock/$id") { // Update stock item

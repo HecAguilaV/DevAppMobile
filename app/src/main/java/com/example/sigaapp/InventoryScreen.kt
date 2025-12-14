@@ -161,11 +161,32 @@ fun InventoryScreen(
                                 colors = CardDefaults.cardColors(containerColor = SurfaceLight),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = cat.nombre,
-                                    modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = cat.nombre,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (canCreateProduct) { // Same permission for delete
+                                        IconButton(
+                                            onClick = { viewModel.deleteCategory(cat.id) },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Eliminar",
+                                                tint = AlertRed,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

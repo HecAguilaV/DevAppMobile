@@ -57,6 +57,11 @@ class SaaSRepository(
         return apiService.createCategory(request, token).map { it.categoria }
     }
 
+    suspend fun deleteCategory(id: Int): Result<Boolean> {
+        val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
+        return apiService.deleteCategory(id, token)
+    }
+
     suspend fun updateStock(id: Int, cantidad: Int): Result<Boolean> {
         val token = sessionManager.getAccessToken() ?: return Result.failure(Exception("No hay sesión activa"))
         return apiService.updateStock(id, cantidad, token)

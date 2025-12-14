@@ -146,6 +146,21 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
         }
     }
 
+    fun deleteCategory(id: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.deleteCategory(id).fold(
+                onSuccess = {
+                    repository.getCategories().onSuccess { _categories.value = it }
+                },
+                onFailure = { e ->
+                    _error.value = "Error al eliminar categoría: ${e.message}"
+                }
+            )
+            _isLoading.value = false
+        }
+    }
+
     fun updateStock(id: Int, cantidad: Int) {
         viewModelScope.launch {
             _isLoading.value = true
