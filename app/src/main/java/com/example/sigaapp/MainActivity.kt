@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                                 cardSize = cardSize, // Pass the collected state
                                 globalViewModel = globalViewModel, // Pass Global VM
                                 onLogout = {
-                                    sessionManager.clearSession()
+                                    sessionManager.clearAuthOnly() // Preservar settings y biometrics
                                     authViewModel.logout()
                                     navController.navigate("login") {
                                         popUpTo(0) { inclusive = true }

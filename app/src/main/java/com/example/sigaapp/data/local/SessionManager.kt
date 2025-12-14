@@ -56,8 +56,24 @@ class SessionManager(context: Context) {
         prefs.edit().clear().apply()
     }
 
+    fun clearAuthOnly() {
+        // Logout que preserva configuraciones y credenciales biométricas
+        prefs.edit()
+            .remove(KEY_ACCESS_TOKEN)
+            .remove(KEY_USER_ID)
+            .remove(KEY_USER_ROLE)
+            .remove(KEY_USER_NAME)
+            .remove(KEY_PERMISSIONS)
+            .apply()
+    }
+
     fun isLoggedIn(): Boolean {
-        return getAccessToken() != null
+        val token = getAccessToken()
+        val userId = getUserId()
+        val role = getUserRole()
+        
+        // Validación estricta: token debe existir, userId válido, y role no vacío
+        return token != null && userId > 0 && !role.isNullOrBlank()
     }
     
     // Configuración

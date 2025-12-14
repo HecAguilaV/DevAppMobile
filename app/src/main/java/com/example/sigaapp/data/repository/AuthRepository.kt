@@ -35,7 +35,7 @@ class AuthRepository(
     }
 
     fun logout() {
-        sessionManager.clearSession()
+        sessionManager.clearAuthOnly() // Preservar settings y biometrics
     }
     
     fun getUserRole(): String? = sessionManager.getUserRole()
