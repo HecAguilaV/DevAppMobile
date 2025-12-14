@@ -33,6 +33,7 @@ import com.example.sigaapp.service.VoiceService
 import com.example.sigaapp.ui.theme.*
 import com.example.sigaapp.ui.viewmodel.CardSize
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable // Required for clickable modifier
 
 enum class UserRole { ADMINISTRADOR, OPERADOR, CAJERO }
 
@@ -43,8 +44,6 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-// Moved import to top
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -53,7 +52,8 @@ fun DashboardScreen(
     permissions: List<String> = emptyList(),
     chatRepository: com.example.sigaapp.data.repository.ChatRepository,
     onLogout: () -> Unit,
-    cardSize: CardSize = CardSize.MEDIUM
+    cardSize: CardSize = CardSize.MEDIUM,
+    globalViewModel: com.example.sigaapp.ui.viewmodel.GlobalViewModel
 ) {
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -65,6 +65,11 @@ fun DashboardScreen(
     val listState = rememberLazyListState()
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
+    
+    // Global State
+    val locales by globalViewModel.locales.collectAsState()
+    val selectedLocal by globalViewModel.selectedLocal.collectAsState()
+    var expandedLocalMenu by remember { mutableStateOf(false) }
     
     // Servicios de voz
     var isVoiceInputEnabled by remember { mutableStateOf(false) }
@@ -170,11 +175,48 @@ fun DashboardScreen(
                             ),
                             color = White
                         )
-                        Text(
-                            text = "Tienda Principal",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AccentTurquoise
-                        )
+                        // Local Selector Dropdown
+                        Box {
+                             Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .clickable { expandedLocalMenu = true }
+                            ) {
+                                Text(
+                                    text = selectedLocal?.nombre ?: "Todas las Tiendas",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AccentTurquoise
+                                )
+                                Icon(
+                                    Icons.Default.ArrowDropDown, 
+                                    contentDescription = "Seleccionar Local",
+                                    tint = AccentTurquoise,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = expandedLocalMenu,
+                                onDismissRequest = { expandedLocalMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Todas las Tiendas") },
+                                    onClick = {
+                                        globalViewModel.selectLocal(null)
+                                        expandedLocalMenu = false
+                                    }
+                                )
+                                locales.forEach { local ->
+                                    DropdownMenuItem(
+                                        text = { Text(local.nombre) },
+                                        onClick = {
+                                            globalViewModel.selectLocal(local)
+                                            expandedLocalMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 },
                 actions = {
@@ -215,7 +257,7 @@ fun DashboardScreen(
                     Icon(
                         painter = painterResource(id = R.drawable.logosiga),
                         contentDescription = "Asistente IA",
-                        tint = Color.Unspecified, // Keep original colors
+                        tint = Color.Unspecified,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -233,7 +275,7 @@ fun DashboardScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Tile principal de Inventario (Grande - estilo Metro)
+            // Tile principal de Inventario
             item(span = { GridItemSpan(2) }) {
                 DashboardTile(
                     title = "Inventario",
@@ -247,7 +289,7 @@ fun DashboardScreen(
                     }
                 )
             }
-            // Tile de Ventas (Mediano - estilo Metro)
+            // Tile de Ventas
             item(span = { GridItemSpan(2) }) {
                 DashboardTile(
                     title = "Ventas",
@@ -267,7 +309,7 @@ fun DashboardScreen(
                     title = "Documentos",
                     icon = Icons.Default.Description,
                     color = AccentCyan,
-                    enabled = userRole == UserRole.ADMINISTRADOR, // Por ahora solo admin
+                    enabled = userRole == UserRole.ADMINISTRADOR,
                     size = TileSize.SMALL,
                     cardSizePreference = cardSize,
                     onClick = { 
@@ -292,8 +334,6 @@ fun DashboardScreen(
                     }
                 )
             }
-            // Tile de Chat con SIGA REMOVED as per user request
-            // Only using FAB now
             item { 
                 DashboardTile(
                     title = "Ajustes",
@@ -313,7 +353,7 @@ fun DashboardScreen(
                     icon = Icons.Default.Support,
                     color = AccentCyan,
                     enabled = true,
-                    size = TileSize.SMALL, // Default text style uses SMALL if not provided, but DashboardTile size defaults to SMALL too
+                    size = TileSize.SMALL,
                     cardSizePreference = cardSize,
                     onClick = {
                         showBottomSheet = true
@@ -499,7 +539,7 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Botón de micrófono (si voz entrada está activada)
+                        // Botón de micrófono
                         if (isVoiceInputEnabled) {
                             IconButton(
                                 onClick = { startVoiceInput() },

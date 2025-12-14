@@ -41,6 +41,10 @@ class MainActivity : ComponentActivity() {
                     val authViewModel: com.example.sigaapp.ui.viewmodel.AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = authViewModelFactory)
                     val settingsViewModel: com.example.sigaapp.ui.viewmodel.SettingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = settingsViewModelFactory)
                     
+                    // Global ViewModel (Shared)
+                    val globalViewModelFactory = com.example.sigaapp.ui.viewmodel.GlobalViewModelFactory(saasRepository)
+                    val globalViewModel: com.example.sigaapp.ui.viewmodel.GlobalViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = globalViewModelFactory)
+
                     val cardSize by settingsViewModel.cardSize.collectAsState()
                     
                     // Determinar destino inicial
@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
                                 permissions = permissions,
                                 chatRepository = chatRepository,
                                 cardSize = cardSize, // Pass the collected state
+                                globalViewModel = globalViewModel, // Pass Global VM
                                 onLogout = {
                                     sessionManager.clearSession()
                                     authViewModel.logout()
@@ -96,7 +101,10 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("inventory") { 
                             val viewModel: com.example.sigaapp.ui.viewmodel.InventoryViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = saasViewModelFactory)
-                            InventoryScreen(navController, viewModel) 
+                            // Inject GlobalVM into InventoryVM via property or params?
+                            // Or just pass GlobalVM state to InventoryScreen?
+                            // Passing GlobalVM to InventoryScreen is easiest for now.
+                            InventoryScreen(navController, viewModel, globalViewModel) 
                         }
                         composable("sales") { 
                             val viewModel: com.example.sigaapp.ui.viewmodel.SalesViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = saasViewModelFactory)

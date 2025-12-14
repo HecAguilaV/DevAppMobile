@@ -21,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.sigaapp.ui.viewmodel.InventoryViewModel
+import com.example.sigaapp.ui.viewmodel.GlobalViewModel
 
 // Product data class removed (using StockItem from models)
 
@@ -28,12 +29,22 @@ import com.example.sigaapp.ui.viewmodel.InventoryViewModel
 @Composable
 fun InventoryScreen(
     navController: NavController,
-    viewModel: InventoryViewModel
+    viewModel: InventoryViewModel,
+    globalViewModel: GlobalViewModel // Injected
 ) {
     val stockItems by viewModel.stockItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val isCreating by viewModel.isCreating.collectAsState()
+    
+    // Global State Sync
+    val globalSelectedLocal by globalViewModel.selectedLocal.collectAsState()
+    val locales by globalViewModel.locales.collectAsState()
+
+    // Sync Global Local Selection to InventoryViewModel
+    LaunchedEffect(globalSelectedLocal) {
+        viewModel.selectLocal(globalSelectedLocal)
+    }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val sessionManager = remember { com.example.sigaapp.data.local.SessionManager(context) }
@@ -56,11 +67,6 @@ fun InventoryScreen(
     var newCategoryName by remember { mutableStateOf("") } // For category creation
     var newCategoryDesc by remember { mutableStateOf("") }
 
-    // Multi-Local State
-    val locales by viewModel.locales.collectAsState()
-    val selectedLocal by viewModel.selectedLocal.collectAsState()
-    var expandedLocalMenu by remember { mutableStateOf(false) }
-    
     // Categories State
     val categories by viewModel.categories.collectAsState()
 
@@ -77,6 +83,17 @@ fun InventoryScreen(
                 newProductDesc = ""
                 newProductStock = ""
             }
+        }
+    }
+    
+    // Feedback Toast (Super 8 issue)
+    LaunchedEffect(isCreating) {
+        if (!isCreating && !showAddDialog && error == null) {
+            // If just finished creating/editing and no error
+            // Check if we actually did something? 
+            // Better to rely on a specific event or check if dialog just closed
+            // Simple generic toast for now if we know an action was pending?
+            // Need a "SuccessMessage" in ViewModel to be sure.
         }
     }
 
@@ -108,6 +125,7 @@ fun InventoryScreen(
                             showCreateCategoryDialog = false
                             newCategoryName = ""
                             newCategoryDesc = ""
+                            android.widget.Toast.makeText(context, "Categoría creada", android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
@@ -214,6 +232,7 @@ fun InventoryScreen(
                         if (newProductName.isNotBlank() && price != null) {
                             if (editingStockItem == null) {
                                 viewModel.addProduct(newProductName, price, newProductDesc)
+                                android.widget.Toast.makeText(context, "Producto creado. Actualizando...", android.widget.Toast.LENGTH_SHORT).show()
                             } else {
                                 // Update Product Details
                                 viewModel.updateProduct(editingStockItem!!.producto_id, newProductName, price, newProductDesc)
@@ -221,6 +240,7 @@ fun InventoryScreen(
                                 if (stock != null && stock != editingStockItem!!.cantidad) {
                                     viewModel.updateStock(editingStockItem!!.id, stock)
                                 }
+                                android.widget.Toast.makeText(context, "Cambios guardados", android.widget.Toast.LENGTH_SHORT).show()
                             }
                             showAddDialog = false
                             editingStockItem = null
@@ -228,6 +248,8 @@ fun InventoryScreen(
                             newProductPrice = ""
                             newProductDesc = ""
                             newProductStock = ""
+                        } else {
+                            android.widget.Toast.makeText(context, "Revise los campos", android.widget.Toast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = !isCreating
@@ -301,7 +323,7 @@ fun InventoryScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Actions Row (Local Filter + Categories)
+                // Actions Row (Just Categories now, Local Selector is Global)
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -312,53 +334,9 @@ fun InventoryScreen(
                             onClick = { showCategoryDialog = true },
                             colors = ButtonDefaults.buttonColors(containerColor = SurfaceLight, contentColor = TextPrimary),
                             shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(0.4f).height(56.dp)
+                            modifier = Modifier.fillMaxWidth().height(56.dp) // Full width now? Or maybe a filter chip style
                         ) {
-                            Text("Categorías", style = MaterialTheme.typography.bodySmall)
-                        }
-
-                         // Selector de Local
-                        if (locales.isNotEmpty()) {
-                            Box(modifier = Modifier.weight(0.6f)) {
-                                ExposedDropdownMenuBox(
-                                    expanded = expandedLocalMenu,
-                                    onExpandedChange = { expandedLocalMenu = !expandedLocalMenu }
-                                ) {
-                                    OutlinedTextField(
-                                        value = selectedLocal?.nombre ?: "Todos",
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("Local") },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLocalMenu) },
-                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = SurfaceLight,
-                                            unfocusedContainerColor = SurfaceLight
-                                        )
-                                    )
-                                    ExposedDropdownMenu(
-                                        expanded = expandedLocalMenu,
-                                        onDismissRequest = { expandedLocalMenu = false }
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text("Todos") },
-                                            onClick = {
-                                                viewModel.selectLocal(null)
-                                                expandedLocalMenu = false
-                                            }
-                                        )
-                                        locales.forEach { local ->
-                                            DropdownMenuItem(
-                                                text = { Text(local.nombre) },
-                                                onClick = {
-                                                    viewModel.selectLocal(local)
-                                                    expandedLocalMenu = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            Text("Gestionar Categorías", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -467,7 +445,7 @@ fun InventoryScreen(
                 // Lista de productos
                 item {
                     Text(
-                        text = "Productos",
+                        text = "Productos ${if (globalSelectedLocal != null) "- " + globalSelectedLocal!!.nombre else ""}",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -479,8 +457,11 @@ fun InventoryScreen(
                 items(stockItems) { item: StockItem ->
                     val isLowStock = item.cantidad <= item.min_stock
                     val itemNombre = item.producto?.nombre ?: "Producto s/n"
-                    val itemPrecio = item.producto?.precio ?: 0
+                    val itemPrecio = item.producto?.precio ?: "0" // Fallback string if null
                     val itemDesc = item.producto?.descripcion ?: ""
+                    
+                    // Look up local name
+                    val localName = locales.find { it.id == item.local_id }?.nombre ?: "Sucursal ${item.local_id}"
                     
                     var showMenu by remember { mutableStateOf(false) }
                     
@@ -537,7 +518,7 @@ fun InventoryScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Text(
-                                        text = "📍 Sucursal ${item.local_id}",
+                                        text = "📍 $localName", // Display Name
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextSecondary
                                     )
