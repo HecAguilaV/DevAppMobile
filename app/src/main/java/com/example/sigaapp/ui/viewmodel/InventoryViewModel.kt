@@ -48,6 +48,7 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
         loadData()
     }
     
+    
     fun loadData() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -61,15 +62,32 @@ class InventoryViewModel(private val repository: SaaSRepository) : ViewModel() {
             repository.getCategories().onSuccess {
                 _categories.value = it
             }
-            // Load Stock
-            repository.getStock().fold(
-                onSuccess = { items ->
-                    _rawStockItems.value = items
-                },
-                onFailure = { e ->
-                    _error.value = e.message ?: "Error al cargar inventario"
+            
+            // Load Products and Stock, then JOIN
+            val productsResult = repository.getProducts()
+            val stockResult = repository.getStock()
+            
+            if (productsResult.isSuccess && stockResult.isSuccess) {
+                val products = productsResult.getOrNull() ?: emptyList()
+                val stock = stockResult.getOrNull() ?: emptyList()
+                
+                // Create product map for fast lookup
+                val productsMap = products.associateBy { it.id }
+                
+                // Enrich stock with product data
+                val enrichedStock = stock.map { stockItem ->
+                    stockItem.copy(
+                        producto = productsMap[stockItem.producto_id]
+                    )
                 }
-            )
+                
+                _rawStockItems.value = enrichedStock
+            } else {
+                _error.value = stockResult.exceptionOrNull()?.message 
+                    ?: productsResult.exceptionOrNull()?.message 
+                    ?: "Error al cargar inventario"
+            }
+            
             _isLoading.value = false
         }
     }
